@@ -189,6 +189,7 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set('n', '<C-c><C-c>', '<C-w>c', { desc = 'Close current window' })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -227,6 +228,8 @@ vim.opt.rtp:prepend(lazypath)
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
+  'tpope/vim-unimpaired',
+  'tpope/vim-surround',
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -566,16 +569,76 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {
+          settings = {
+            ['rust-analyzer'] = {
+              cargo = {
+                features = 'all',
+              },
+              imports = {
+                granularity = 'One',
+              },
+              inlayHints = {
+                bindingModeHints = {
+                  enable = true,
+                },
+                chainingHints = {
+                  enable = true,
+                },
+                closingBraceHints = {
+                  enable = true,
+                },
+                closureCaptureHints = {
+                  enable = false,
+                },
+                closureReturnTypeHints = {
+                  enable = false,
+                },
+                closureStyle = 'impl_fn',
+                discriminantHints = {
+                  enable = 'always',
+                },
+                expressionAdjustmentHints = {
+                  enable = 'always',
+                  mode = 'prefix',
+                  hideOutsideUnsafe = true,
+                },
+                implicitDrops = {
+                  enable = false,
+                },
+                lifetimeEllisionHints = {
+                  enable = 'always',
+                  useParameterNames = false,
+                },
+                maxLength = 25,
+                parameterHints = {
+                  enable = false,
+                },
+                rangeExclusiveHints = {
+                  enable = false,
+                },
+                reborrowHints = {
+                  enable = 'never',
+                },
+                renderColons = true,
+                typeHints = {
+                  enable = true,
+                  hideClosureInitialization = false,
+                  hideNamedConstructor = false,
+                },
+              },
+            },
+          },
+        },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        -- tsserver = {},
+        tsserver = {},
         --
 
         lua_ls = {
@@ -651,7 +714,18 @@ require('lazy').setup({
         }
       end,
       formatters_by_ft = {
+        bash = { 'beautysh' },
+        css = { 'stylelint' },
+        scss = { 'stylelint' },
+        javascript = { 'prettierd' },
+        javascriptreact = { 'prettierd' },
         lua = { 'stylua' },
+        markdown = { 'prettierd' },
+        mdx = { 'prettierd' },
+        python = { 'ruff_format' },
+        toml = { 'taplo' },
+        typescript = { 'prettierd' },
+        typescriptreact = { 'prettierd' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -773,18 +847,54 @@ require('lazy').setup({
     end,
   },
 
+  { -- Terminal
+    {
+      'akinsho/toggleterm.nvim',
+      version = '*',
+      config = function()
+        require('toggleterm').setup {
+          open_mapping = [[<c-n>]],
+          size = 10,
+        }
+
+        local Terminal = require('toggleterm.terminal').Terminal
+        local lazygit = Terminal:new {
+          cmd = 'lazygit',
+          count = 9,
+          direction = 'float',
+          float_opts = {
+            border = 'double',
+          },
+          on_open = function(term)
+            vim.cmd 'startinsert!'
+            vim.api.nvim_buf_set_keymap(term.bufnr, 'n', 'q', '<cmd>close<CR>j', { noremap = true, silent = true })
+          end,
+          on_close = function(_)
+            vim.cmd 'Closing terminal'
+          end,
+        }
+
+        function _lazygit_toggle()
+          lazygit:toggle()
+        end
+
+        vim.api.nvim_set_keymap('n', '<C-g>', '<cmd>lua _lazygit_toggle()<CR>', { noremap = true, silent = true })
+      end,
+    },
+  },
+
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
+    'Shatur/neovim-ayu',
     priority = 1000, -- Make sure to load this before all the other start plugins.
     init = function()
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'ayu-mirage'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
@@ -810,7 +920,7 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -852,7 +962,6 @@ require('lazy').setup({
 
       -- Prefer git instead of curl in order to improve connectivity in some environments
       require('nvim-treesitter.install').prefer_git = true
-      ---@diagnostic disable-next-line: missing-fields
       require('nvim-treesitter.configs').setup(opts)
 
       -- There are additional nvim-treesitter modules that you can use to interact
@@ -874,10 +983,10 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
+  require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -885,7 +994,7 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
