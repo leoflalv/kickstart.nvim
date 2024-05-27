@@ -104,6 +104,11 @@ vim.opt.number = true
 --  Experiment for yourself to see if you like it!
 -- vim.opt.relativenumber = true
 
+-- Allow scrolls when the line it's too large
+vim.opt.wrap = false
+vim.opt.sidescrolloff = 1
+vim.opt.sidescroll = 1
+
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
 
