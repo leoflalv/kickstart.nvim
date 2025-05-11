@@ -83,6 +83,12 @@ I hope you enjoy your Neovim journey,
 
 P.S. You can delete this when you're done too. It's your config now! :)
 --]]
+--
+-- To make tabs as spaces
+vim.opt.expandtab = true -- Use spaces instead of tabs
+vim.opt.tabstop = 4 -- A tab is equal to 4 spaces
+vim.opt.shiftwidth = 4 -- Indentation uses 4 spaces
+vim.opt.softtabstop = 4 -- Insert 4 spaces when pressing Tab in insert mode
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -114,6 +120,8 @@ vim.opt.mouse = 'a'
 
 -- Don't show the mode, since it's already in the status line
 vim.opt.showmode = false
+
+vim.opt.laststatus = 3
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -674,8 +682,7 @@ require('lazy').setup({
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
         ts_ls = {},
-        --
-
+        sqlls = {},
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -690,6 +697,33 @@ require('lazy').setup({
             },
           },
         },
+        eslint = {
+          capabilities = vim.tbl_deep_extend('force', {}, capabilities),
+          on_attach = function(client, bufnr)
+            if client.name == 'eslint' then
+              -- 1) make (or reuse) the group, clearing it once so you never
+              --    end up with leftover autocmds from previous attaches
+              local aug_id = vim.api.nvim_create_augroup('eslint_lsp_autofix', { clear = true })
+
+              -- 2) now register your autocmd in that group for this buffer
+              vim.api.nvim_create_autocmd('BufWritePre', {
+                group = aug_id,
+                buffer = bufnr,
+                -- you can either use `command`:
+                command = 'EslintFixAll',
+                -- or `callback`:
+                -- callback = function() vim.cmd('EslintFixAll') end,
+              })
+            end
+          end,
+          settings = {
+            format = { enable = true },
+          },
+        },
+        stylelint = {},
+        prismals = {},
+        cssls = {},
+        jsonls = {},
       }
 
       -- Ensure the servers and tools above are installed
@@ -722,6 +756,13 @@ require('lazy').setup({
       }
     end,
   },
+
+  -- { -- Ai Autocompleted
+  --   'supermaven-inc/supermaven-nvim',
+  --   config = function()
+  --     require('supermaven-nvim').setup {}
+  --   end,
+  -- },
 
   { -- Autoformat
     'stevearc/conform.nvim',
@@ -758,15 +799,15 @@ require('lazy').setup({
       formatters_by_ft = {
         css = { 'stylelint' },
         scss = { 'stylelint' },
-        javascript = { 'prettierd' },
-        javascriptreact = { 'prettierd' },
+        javascript = { 'prettier', stop_after_first = false },
+        javascriptreact = { 'prettier', stop_after_first = false },
         lua = { 'stylua' },
-        markdown = { 'prettierd' },
         mdx = { 'prettierd' },
         python = { 'ruff_format' },
         toml = { 'taplo' },
-        typescript = { 'prettierd' },
-        typescriptreact = { 'prettierd' },
+        typescript = { 'prettier', stop_after_first = false },
+        typescriptreact = { 'prettier', stop_after_first = false },
+        sql = { 'sql-formatter' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -985,7 +1026,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'sql' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -1012,6 +1053,82 @@ require('lazy').setup({
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
     end,
   },
+  -- {
+  --   'yetone/avante.nvim',
+  --   event = 'VeryLazy',
+  --   version = false, -- Never set this value to "*"! Never!
+  --   opts = {
+  --     -- add any opts here
+  --     -- for example
+  --     -- provider = 'openai',
+  --     -- openai = {
+  --     --   endpoint = 'https://api.openai.com/v1',
+  --     --   model = 'gpt-4o', -- your desired model (or use gpt-4o, etc.)
+  --     --   timeout = 30000, -- Timeout in milliseconds, increase this for reasoning models
+  --     --   temperature = 0,
+  --     --   max_completion_tokens = 8192, -- Increase this to include reasoning tokens (for reasoning models)
+  --     --   --reasoning_effort = "medium", -- low|medium|high, only used for reasoning models
+  --     -- },
+  --     provider = 'claude', -- The provider used in Aider mode or in the planning phase of Cursor Planning Mode
+  --     -- auto_suggestions_provider = 'claude',
+  --     cursor_applying_provider = nil, -- The provider used in the applying phase of Cursor Planning Mode, defaults to nil, when nil uses Config.provider as the provider for the applying phase
+  --     claude = {
+  --       endpoint = 'https://api.anthropic.com',
+  --       model = 'claude-3-5-sonnet-20241022',
+  --       temperature = 0,
+  --       max_tokens = 4096,
+  --     },
+  --     rag_service = {
+  --       enabled = false, -- Enables the RAG service
+  --       host_mount = os.getenv 'HOME', -- Host mount path for the rag service
+  --       provider = 'openai', -- The provider to use for RAG service (e.g. openai or ollama)
+  --       llm_model = '', -- The LLM model to use for RAG service
+  --       embed_model = '', -- The embedding model to use for RAG service
+  --       endpoint = 'https://api.openai.com/v1', -- The API endpoint for RAG service
+  --     },
+  --   },
+  --   -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
+  --   build = 'make',
+  --   -- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
+  --   dependencies = {
+  --     'nvim-treesitter/nvim-treesitter',
+  --     'stevearc/dressing.nvim',
+  --     'nvim-lua/plenary.nvim',
+  --     'MunifTanjim/nui.nvim',
+  --     --- The below dependencies are optional,
+  --     'echasnovski/mini.pick', -- for file_selector provider mini.pick
+  --     'nvim-telescope/telescope.nvim', -- for file_selector provider telescope
+  --     'hrsh7th/nvim-cmp', -- autocompletion for avante commands and mentions
+  --     'ibhagwan/fzf-lua', -- for file_selector provider fzf
+  --     'nvim-tree/nvim-web-devicons', -- or echasnovski/mini.icons
+  --     'zbirenbaum/copilot.lua', -- for providers='copilot'
+  --     {
+  --       -- support for image pasting
+  --       'HakonHarnes/img-clip.nvim',
+  --       event = 'VeryLazy',
+  --       opts = {
+  --         -- recommended settings
+  --         default = {
+  --           embed_image_as_base64 = false,
+  --           prompt_for_file_name = false,
+  --           drag_and_drop = {
+  --             insert_mode = true,
+  --           },
+  --           -- required for Windows users
+  --           use_absolute_path = true,
+  --         },
+  --       },
+  --     },
+  --     {
+  --       -- Make sure to set this up properly if you have lazy=true
+  --       'MeanderingProgrammer/render-markdown.nvim',
+  --       opts = {
+  --         file_types = { 'markdown', 'Avante' },
+  --       },
+  --       ft = { 'markdown', 'Avante' },
+  --     },
+  --   },
+  -- },
 
   -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
