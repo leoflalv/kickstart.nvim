@@ -155,7 +155,7 @@ vim.opt.splitbelow = true
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
-vim.opt.list = true
+vim.opt.list = false
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Preview substitutions live, as you type!
@@ -681,7 +681,19 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        ts_ls = {},
+        ts_ls = {
+          filetypes = { 'javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'vue' },
+          init_options = {
+            plugins = {
+              {
+                name = '@vue/typescript-plugin',
+                -- This must point to where Mason installs the vue-language-server
+                location = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server',
+                languages = { 'vue' },
+              },
+            },
+          },
+        },
         sqlls = {},
         lua_ls = {
           -- cmd = {...},
@@ -724,6 +736,36 @@ require('lazy').setup({
         prismals = {},
         cssls = {},
         jsonls = {},
+        volar = {
+          filetypes = { 'vue' },
+          init_options = {
+            vue = {
+              hybridMode = true,
+            },
+          },
+        },
+        html = {
+          filetypes = { 'html', 'vue' },
+        },
+        tailwindcss = {
+          filetypes = {
+            'css',
+            'postcss',
+            'pcss',
+            'html',
+            'javascript',
+            'javascriptreact',
+            'typescript',
+            'typescriptreact',
+            'vue',
+          },
+          init_options = {
+            userLanguages = {
+              postcss = 'css',
+              pcss = 'css',
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -757,12 +799,12 @@ require('lazy').setup({
     end,
   },
 
-  -- { -- Ai Autocompleted
-  --   'supermaven-inc/supermaven-nvim',
-  --   config = function()
-  --     require('supermaven-nvim').setup {}
-  --   end,
-  -- },
+  { -- Ai Autocompleted
+    'supermaven-inc/supermaven-nvim',
+    config = function()
+      require('supermaven-nvim').setup {}
+    end,
+  },
 
   { -- Autoformat
     'stevearc/conform.nvim',
@@ -797,8 +839,9 @@ require('lazy').setup({
         }
       end,
       formatters_by_ft = {
-        css = { 'stylelint' },
-        scss = { 'stylelint' },
+        vue = { 'prettierd', 'prettier' },
+        css = { 'prettier', 'stylelint', stop_after_first = false },
+        scss = { 'prettier', 'stylelint', stop_after_first = false },
         javascript = { 'prettier', stop_after_first = false },
         javascriptreact = { 'prettier', stop_after_first = false },
         lua = { 'stylua' },
@@ -1026,7 +1069,7 @@ require('lazy').setup({
     'nvim-treesitter/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc', 'sql' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'javascript', 'typescript', 'vue', 'vim', 'vimdoc', 'sql' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
