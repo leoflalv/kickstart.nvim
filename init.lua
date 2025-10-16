@@ -86,9 +86,9 @@ P.S. You can delete this when you're done too. It's your config now! :)
 --
 -- To make tabs as spaces
 vim.opt.expandtab = true -- Use spaces instead of tabs
-vim.opt.tabstop = 2 -- A tab is equal to 4 spaces
-vim.opt.shiftwidth = 2 -- Indentation uses 4 spaces
-vim.opt.softtabstop = 2 -- Insert 4 spaces when pressing Tab in insert mode
+vim.opt.tabstop = 4 -- A tab is equal to 4 spaces
+vim.opt.shiftwidth = 4 -- Indentation uses 4 spaces
+vim.opt.softtabstop = 4 -- Insert 4 spaces when pressing Tab in insert mode
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -756,9 +756,6 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        ts_ls = {
-          filetypes = { 'javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'vue' },
-        },
         sqlls = {},
         lua_ls = {
           -- cmd = {...},
@@ -774,33 +771,37 @@ require('lazy').setup({
             },
           },
         },
-        eslint = {
-          capabilities = vim.tbl_deep_extend('force', {}, capabilities),
-          on_attach = function(client, bufnr)
-            if client.name == 'eslint' then
-              -- 1) make (or reuse) the group, clearing it once so you never
-              --    end up with leftover autocmds from previous attaches
-              local aug_id = vim.api.nvim_create_augroup('eslint_lsp_autofix', { clear = true })
-
-              -- 2) now register your autocmd in that group for this buffer
-              vim.api.nvim_create_autocmd('BufWritePre', {
-                group = aug_id,
-                buffer = bufnr,
-                -- you can either use `command`:
-                command = 'EslintFixAll',
-                -- or `callback`:
-                -- callback = function() vim.cmd('EslintFixAll') end,
-              })
-            end
-          end,
-          settings = {
-            format = { enable = true },
-          },
-        },
+        prettierd = {},
+        eslint_d = {},
+        -- eslint = {
+        --   capabilities = vim.tbl_deep_extend('force', {}, capabilities),
+        --   on_attach = function(client, bufnr)
+        --     if client.name == 'eslint' then
+        --       -- 1) make (or reuse) the group, clearing it once so you never
+        --       --    end up with leftover autocmds from previous attaches
+        --       local aug_id = vim.api.nvim_create_augroup('eslint_lsp_autofix', { clear = true })
+        --
+        --       -- 2) now register your autocmd in that group for this buffer
+        --       vim.api.nvim_create_autocmd('BufWritePre', {
+        --         group = aug_id,
+        --         buffer = bufnr,
+        --         -- you can either use `command`:
+        --         command = 'EslintFixAll',
+        --         -- or `callback`:
+        --         -- callback = function() vim.cmd('EslintFixAll') end,
+        --       })
+        --     end
+        --   end,
+        --   settings = {
+        --     format = { enable = true },
+        --   },
+        -- },
         -- stylelint = {},
         prismals = {},
         cssls = {},
         jsonls = {},
+        vtsls = {},
+        vue_ls = {},
         html = {
           filetypes = { 'html' },
         },
@@ -910,24 +911,13 @@ require('lazy').setup({
       })
 
       vim.lsp.config('eslint', {
-        capabilities = capabilities,
+        -- keep your other settings
+        settings = { format = { enable = false } }, -- 🚫 ESLint formatter
         on_attach = function(client, bufnr)
-          if client.name == 'eslint' then
-            local aug = vim.api.nvim_create_augroup('eslint_lsp_autofix', { clear = true })
-            vim.api.nvim_create_autocmd('BufWritePre', {
-              group = aug,
-              buffer = bufnr,
-              callback = function()
-                -- Trigger ESLint’s “fix all” code action
-                vim.lsp.buf.code_action {
-                  context = { only = { 'source.fixAll.eslint' } },
-                  apply = true,
-                }
-              end,
-            })
-          end
+          -- hard-disable formatting from ESLint LSP just in case
+          client.server_capabilities.documentFormattingProvider = false
+          client.server_capabilities.documentRangeFormattingProvider = false
         end,
-        settings = { format = { enable = true } },
       })
 
       -- vim.lsp.config('vtsls', {
@@ -990,7 +980,18 @@ require('lazy').setup({
         end
       end,
       formatters_by_ft = {
+        vue = { 'prettierd', 'eslint_d', 'eslint' },
+        css = { 'prettierd', 'eslint_d' },
+        scss = { 'prettierd', 'eslint_d' },
+        javascript = { 'prettierd', 'eslint_d', 'eslint' },
+        javascriptreact = { 'prettierd', 'eslint_d', 'eslint' },
         lua = { 'stylua' },
+        mdx = { 'prettierd' },
+        python = { 'ruff_format' },
+        toml = { 'taplo' },
+        typescript = { 'prettierd', 'eslint_d', 'eslint' },
+        typescriptreact = { 'prettierd', 'eslint_d', 'eslint' },
+        sql = { 'sql-formatter' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
